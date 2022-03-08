@@ -17,7 +17,7 @@ module.exports.getUserById = (req, res) => {
     if (err.statusCode === 404){
       res.status(404).send({ message: err.errorMessage });
     } else
-    return res.status(500).send({message: 'Произошла ошибка'})
+    return res.status(400).send({message: 'Переданы некорректные данные'})
   })
 }
 

@@ -21,7 +21,7 @@ module.exports.createCard = (req, res) => {
           }
         });
         res.status(400).send({ message: errorMessage });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -36,7 +36,7 @@ module.exports.deleteCard = (req, res) => {
         res.status(404).send({ message: err.errorMessage });
       } else if (err.name === 'CastError') {
         res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -55,7 +55,7 @@ module.exports.likeCard = (req, res) => {
         res.status(404).send({ message: err.errorMessage });
       } else if (err.name === 'CastError') {
         res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -74,6 +74,6 @@ module.exports.dislikeCard = (req, res) => {
         res.status(404).send({ message: err.errorMessage });
       } else if (err.name === 'CastError') {
         res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };

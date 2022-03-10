@@ -18,7 +18,7 @@ module.exports.getUserById = (req, res) => {
         res.status(404).send({ message: err.errorMessage });
       } else if (err.name === 'CastError') {
         res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -36,7 +36,7 @@ module.exports.createUser = (req, res) => {
           }
         });
         res.status(400).send({ message: errorMessage });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -62,7 +62,7 @@ module.exports.updateUser = (req, res) => {
           }
         });
         res.status(400).send({ message: errorMessage });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };
 
@@ -88,6 +88,6 @@ module.exports.updateAvatar = (req, res) => {
           }
         });
         res.status(400).send({ message: errorMessage });
-      } else { return res.status(500).send({ message: 'Произошла ошибка' }); }
+      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
     });
 };

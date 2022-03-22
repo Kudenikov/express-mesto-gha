@@ -71,7 +71,6 @@ app.use('/', () => {
 });
 
 app.use(errors());
-// eslint-disable-next-line no-unused-vars
 app.use(errorHandler);
 
 app.listen(PORT, () => {

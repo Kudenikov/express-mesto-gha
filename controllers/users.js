@@ -1,46 +1,53 @@
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
 const User = require('../models/user');
 const ErrorNotFound = require('../errors/ErrorNotFound');
+const Unauthorized = require('../errors/Unauthorized');
+const ErrorConflict = require('../errors/ErrorConflict');
+const { JWT_SECRET, SALT } = require('../config/index');
 
-module.exports.getUsers = (req, res) => {
+module.exports.getUsers = (req, res, next) => {
   User.find({})
     .then((users) => res.send({ data: users }))
-    .catch(() => res.status(500).send({ message: 'Произошла ошибка' }));
+    .catch(next);
 };
 
-module.exports.getUserById = (req, res) => {
+module.exports.getUserById = (req, res, next) => {
   User.findById(req.params.userId)
     .orFail(() => {
       throw new ErrorNotFound(`Нет пользователя с id ${req.params.userId}`);
     })
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.statusCode === 404) {
-        res.status(404).send({ message: err.errorMessage });
-      } else if (err.name === 'CastError') {
-        res.status(400).send({ message: 'Переданы некорректные данные' });
-      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
-    });
+    .catch(next);
 };
 
-module.exports.createUser = (req, res) => {
-  const { name, about, avatar } = req.body;
-  User.create({ name, about, avatar })
+module.exports.getCurrentUser = (req, res, next) => {
+  User.find({ _id: req.user._id })
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        let errorMessage = 'Переданы неверные данные: ';
-        const errorValues = Object.values(err.errors);
-        errorValues.forEach((errVal) => {
-          if (typeof errVal === 'object') {
-            errorMessage += `Ошибка в поле ${errVal.path} `;
-          }
-        });
-        res.status(400).send({ message: errorMessage });
-      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
-    });
+    .catch(next);
 };
 
-module.exports.updateUser = (req, res) => {
+module.exports.createUser = (req, res, next) => {
+  User.findOne({ email: req.body.email })
+    .then((user) => {
+      if (user) {
+        throw new ErrorConflict(`Пользователь ${req.body.email} уже зарегистрирован`);
+      }
+      return bcrypt.hash(req.body.password, SALT);
+    })
+    .then((hash) => User.create({
+      name: req.body.name,
+      about: req.body.about,
+      avatar: req.body.avatar,
+      email: req.body.email,
+      password: hash,
+    }))
+    .then((user) => User.findOne({ _id: user._id }))
+    .then((user) => res.send({ data: user }))
+    .catch(next);
+};
+
+module.exports.updateUser = (req, res, next) => {
   const { name, about } = req.body;
 
   User.findByIdAndUpdate(
@@ -52,21 +59,10 @@ module.exports.updateUser = (req, res) => {
     },
   )
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        let errorMessage = 'Переданы неверные данные: ';
-        const errorValues = Object.values(err.errors);
-        errorValues.forEach((errVal) => {
-          if (typeof errVal === 'object') {
-            errorMessage += `Ошибка в поле ${errVal.path} `;
-          }
-        });
-        res.status(400).send({ message: errorMessage });
-      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
-    });
+    .catch(next);
 };
 
-module.exports.updateAvatar = (req, res) => {
+module.exports.updateAvatar = (req, res, next) => {
   const { avatar } = req.body;
 
   User.findByIdAndUpdate(
@@ -78,16 +74,24 @@ module.exports.updateAvatar = (req, res) => {
     },
   )
     .then((user) => res.send({ data: user }))
-    .catch((err) => {
-      if (err.name === 'ValidationError') {
-        let errorMessage = 'Переданы неверные данные: ';
-        const errorValues = Object.values(err.errors);
-        errorValues.forEach((errVal) => {
-          if (typeof errVal === 'object') {
-            errorMessage += `Ошибка в поле ${errVal.path} `;
+    .catch(next);
+};
+
+module.exports.login = (req, res, next) => {
+  const { email, password } = req.body;
+  User.findOne({ email }, '+password')
+    .then((user) => {
+      if (!user) {
+        throw new Unauthorized('Неправильное имя пользователя или пароль');
+      }
+      return bcrypt.compare(password, user.password)
+        .then((matched) => {
+          if (!matched) {
+            throw new Unauthorized('Неправильное имя пользователя или пароль');
           }
+          const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+          res.send({ jwt: token });
         });
-        res.status(400).send({ message: errorMessage });
-      } else { res.status(500).send({ message: 'Произошла ошибка' }); }
-    });
+    })
+    .catch(next);
 };

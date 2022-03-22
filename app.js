@@ -5,10 +5,12 @@ const {
   Joi,
   errors,
 } = require('celebrate');
-const { isEmail } = require('validator');
+const { isEmail, isURL } = require('validator');
 
 const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
+const errorHandler = require('./middlewares/errorHandler');
+const ErrorNotFound = require('./errors/ErrorNotFound');
 
 const { PORT = 3000 } = process.env;
 const app = express();
@@ -40,7 +42,15 @@ app.post('/signup', celebrate({
   body: Joi.object().keys({
     name: Joi.string().min(2).max(30),
     about: Joi.string().min(2).max(30),
-    avatar: Joi.string(),
+    avatar: Joi.string().custom((value, helper) => {
+      if (!isURL(value, { require_protocol: true })) {
+        return helper.error('string.notURL');
+      }
+      return value;
+    }).messages({
+      'string.notURL': 'Адрес некорректный',
+      'any.required': 'Ссылка не указана',
+    }),
     email: Joi.string().required().custom((value, helper) => {
       if (!isEmail(value)) {
         return helper.error('string.notEmail');
@@ -56,19 +66,13 @@ app.post('/signup', celebrate({
   }),
 }), createUser);
 
-app.use('/', (req, res) => res.status(404).send({ message: 'Указан неверный путь' }));
+app.use('/', () => {
+  throw new ErrorNotFound('Указан неверный путь');
+});
 
 app.use(errors());
 // eslint-disable-next-line no-unused-vars
-app.use((err, req, res, next) => {
-  if (err instanceof mongoose.Error) {
-    return res.status(400).send({ message: err.message });
-  }
-  const { statusCode = 500, message } = err;
-  return res.status(statusCode).send({
-    message: statusCode === 500 ? 'Ошибка сервера' : message,
-  });
-});
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   // eslint-disable-next-line no-console

@@ -19,7 +19,7 @@ const app = express();
 
 app.use(express.json());
 mongoose.connect('mongodb://localhost:27017/mestodb');
-app.use(cors);
+// app.use(cors);
 app.use(requestLogger);
 app.use('/users', auth, require('./routes/users'));
 app.use('/cards', auth, require('./routes/cards'));

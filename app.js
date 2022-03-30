@@ -11,13 +11,16 @@ const { login, createUser } = require('./controllers/users');
 const auth = require('./middlewares/auth');
 const errorHandler = require('./middlewares/errorHandler');
 const ErrorNotFound = require('./errors/ErrorNotFound');
+const { requestLogger, errorLogger } = require('./middlewares/logger');
+const cors = require('./middlewares/cors');
 
 const { PORT = 3000 } = process.env;
 const app = express();
 
 app.use(express.json());
 mongoose.connect('mongodb://localhost:27017/mestodb');
-
+app.use(cors);
+app.use(requestLogger);
 app.use('/users', auth, require('./routes/users'));
 app.use('/cards', auth, require('./routes/cards'));
 
@@ -70,6 +73,7 @@ app.use('/', () => {
   throw new ErrorNotFound('Указан неверный путь');
 });
 
+app.use(errorLogger);
 app.use(errors());
 app.use(errorHandler);
 

@@ -4,7 +4,10 @@ const User = require('../models/user');
 const ErrorNotFound = require('../errors/ErrorNotFound');
 const Unauthorized = require('../errors/Unauthorized');
 const ErrorConflict = require('../errors/ErrorConflict');
-const { JWT_SECRET, SALT } = require('../config/index');
+
+const SALT = 10;
+
+const { NODE_ENV, JWT_SECRET } = process.env;
 
 module.exports.getUsers = (req, res, next) => {
   User.find({})
@@ -89,7 +92,11 @@ module.exports.login = (req, res, next) => {
           if (!matched) {
             throw new Unauthorized('Неправильное имя пользователя или пароль');
           }
-          const token = jwt.sign({ _id: user._id }, JWT_SECRET, { expiresIn: '7d' });
+          const token = jwt.sign(
+            { _id: user._id },
+            NODE_ENV === 'production' ? JWT_SECRET : 'dev-secret',
+            { expiresIn: '7d' },
+          );
           res.send({ jwt: token });
         });
     })
